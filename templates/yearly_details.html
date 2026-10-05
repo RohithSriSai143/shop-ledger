@@ -10,7 +10,7 @@
     <nav class="navbar navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="/dashboard">Siva sai durga - Yearly Details</a>
-            <a href="/dashboard" class="btn btn-success btn-sm">Home Page</a>
+            <a href="/dashboard" class="dashboard-btn btn btn-success btn-sm">Home Page</a>
         </div>
     </nav>
 
@@ -25,16 +25,14 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Day</th>
-                                <th>Total Collection</th>
+                                <th>Year</th>
+                                <th>Total Amount</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for row in transactions %}
                             <tr>
                                 <td>{{ row[1] }}</td>
-                                <td>{{ row[2] }}</td>
                                 <td>₹{{ row[5] }}</td>
                             </tr>
                             {% endfor %}

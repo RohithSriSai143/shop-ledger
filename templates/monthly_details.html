@@ -32,8 +32,8 @@
                         <tbody>
                             {% for row in transactions %}
                             <tr>
-                                <td>{{ row[1] }}</td>
-                                <td>₹{{ row[5] }}</td>
+                                <td>{{ row.name }}</td>
+                                <td>₹{{ row.total }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

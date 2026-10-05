@@ -163,32 +163,66 @@ def weekly_details():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     conn = get_db_connection()
-    records = conn.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC LIMIT 7', (session['user_id'],)).fetchall()
-    total = sum([r['total_amount'] for r in records])
+    all_records = conn.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date ASC', (session['user_id'],)).fetchall()
     conn.close()
-    return render_template('details.html', title="Weekly Details", records=records, total=total)
+    
+    temp_weekly = {}
+    for row in all_records:
+        dt = datetime.strptime(row['date'], '%Y-%m-%d')
+        year_week = dt.strftime('%Y-W%U')
+        if year_week not in temp_weekly:
+            temp_weekly[year_week] = 0
+        temp_weekly[year_week] += row['total_amount']
+    
+    # Format transactions as list of tuples/objects for the template
+    transactions = []
+    for idx, (wk, total_val) in enumerate(temp_weekly.items(), start=1):
+        transactions.append(('', f"Week {idx}", '', '', '', total_val))
+        
+    return render_template('weekly_details.html', transactions=transactions)
 
 @app.route('/monthly_details')
 def monthly_details():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    current_month = datetime.now().strftime('%Y-%m')
     conn = get_db_connection()
-    records = conn.execute('SELECT * FROM transactions WHERE user_id = ? AND date LIKE ? ORDER BY date DESC', (session['user_id'], current_month + '%')).fetchall()
-    total = sum([r['total_amount'] for r in records])
+    all_records = conn.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date ASC', (session['user_id'],)).fetchall()
     conn.close()
-    return render_template('details.html', title="Monthly Details", records=records, total=total)
+    
+    temp_monthly = {}
+    for row in all_records:
+        month_key = row['date'][:7]
+        if month_key not in temp_monthly:
+            dt_month = datetime.strptime(month_key, '%Y-%m').strftime('%B %Y')
+            temp_monthly[month_key] = {'name': dt_month, 'total': 0}
+        temp_monthly[month_key]['total'] += row['total_amount']
+        
+    transactions = []
+    for m_key, data in temp_monthly.items():
+        transactions.append(('', data['name'], '', '', '', data['total']))
+        
+    return render_template('monthly_details.html', transactions=transactions)
 
 @app.route('/yearly_details')
 def yearly_details():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    current_year = datetime.now().strftime('%Y')
     conn = get_db_connection()
-    records = conn.execute('SELECT * FROM transactions WHERE user_id = ? AND date LIKE ? ORDER BY date DESC', (session['user_id'], current_year + '%')).fetchall()
-    total = sum([r['total_amount'] for r in records])
+    all_records = conn.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date ASC', (session['user_id'],)).fetchall()
     conn.close()
-    return render_template('details.html', title="Yearly Details", records=records, total=total)
+    
+    temp_yearly = {}
+    for row in all_records:
+        yr = row['date'][:4]
+        if yr not in temp_yearly:
+            temp_yearly[yr] = 0
+        temp_yearly[yr] += row['total_amount']
+        
+    transactions = []
+    for yr, total_val in temp_yearly.items():
+        transactions.append(('', yr, '', '', '', total_val))
+        
+    return render_template('yearly_details.html', transactions=transactions)
 
 @app.route('/reports')
 def reports():
@@ -219,7 +253,6 @@ def reports():
         if month_key not in temp_monthly:
             dt_month = datetime.strptime(month_key, '%Y-%m').strftime('%B')
             temp_monthly[dt_month] = 0
-        dt_month = datetime.strptime(row['date'][:7], '%Y-%m').strftime('%B')
         temp_monthly[dt_month] += row['total_amount']
     monthly_labels = list(temp_monthly.keys())
     monthly_data = list(temp_monthly.values())
@@ -258,7 +291,6 @@ def download_pdf():
     user_id = session['user_id']
     conn = get_db_connection()
     
-    # Fetching user shop details
     user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
     all_records = conn.execute('SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC', (user_id,)).fetchall()
     conn.close()
@@ -270,14 +302,12 @@ def download_pdf():
     
     y = 750
     p.setFont("Helvetica-Bold", 14)
-    # Replaced 'Shop Ledger Report' with actual Shop Name
     p.drawString(50, y, f"{shop_name} - Collection Report")
     y -= 20
     p.setFont("Helvetica", 10)
     p.drawString(50, y, f"Email: {user['email']} | Phone: {user['number']}")
     y -= 30
     
-    # --- Days Collections ---
     p.setFont("Helvetica-Bold", 11)
     p.drawString(50, y, "--- Days Collections ---")
     y -= 20
@@ -309,7 +339,6 @@ def download_pdf():
         p.showPage()
         y = 750
 
-    # --- Weekly Collections ---
     p.setFont("Helvetica-Bold", 11)
     p.drawString(50, y, "--- Weekly Collections ---")
     y -= 20
@@ -342,7 +371,6 @@ def download_pdf():
         p.showPage()
         y = 750
 
-    # --- Yearly Collections ---
     p.setFont("Helvetica-Bold", 11)
     p.drawString(50, y, "--- Yearly Collections ---")
     y -= 20

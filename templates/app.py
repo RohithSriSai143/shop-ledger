@@ -174,10 +174,9 @@ def weekly_details():
             temp_weekly[year_week] = 0
         temp_weekly[year_week] += row['total_amount']
     
-    # Format transactions as list of tuples/objects for the template
     transactions = []
     for idx, (wk, total_val) in enumerate(temp_weekly.items(), start=1):
-        transactions.append(('', f"Week {idx}", '', '', '', total_val))
+        transactions.append({'name': f"Week {idx}", 'total': total_val})
         
     return render_template('weekly_details.html', transactions=transactions)
 
@@ -197,9 +196,7 @@ def monthly_details():
             temp_monthly[month_key] = {'name': dt_month, 'total': 0}
         temp_monthly[month_key]['total'] += row['total_amount']
         
-    transactions = []
-    for m_key, data in temp_monthly.items():
-        transactions.append(('', data['name'], '', '', '', data['total']))
+    transactions = list(temp_monthly.values())
         
     return render_template('monthly_details.html', transactions=transactions)
 
@@ -220,7 +217,7 @@ def yearly_details():
         
     transactions = []
     for yr, total_val in temp_yearly.items():
-        transactions.append(('', yr, '', '', '', total_val))
+        transactions.append({'name': yr, 'total': total_val})
         
     return render_template('yearly_details.html', transactions=transactions)
 

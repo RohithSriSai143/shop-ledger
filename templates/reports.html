@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Collection Graphs & Reports</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <div class="container my-5" style="max-width: 900px;">
+        <!-- Header & Home Button -->
+        <div class="card p-4 shadow mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>📊 Collection Analytics & Summary</h2>
+                <a href="/dashboard" class="btn btn-success">Home Page</a>
+            </div>
+        </div>
+
+        <!-- Summary Cards Section (Weekly, Monthly, Yearly Totals) -->
+        <div class="row text-white mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="card bg-primary p-3 shadow text-center">
+                    <h6>Weekly Total</h6>
+                    <h4>₹{{ "%.2f"|format(weekly_total) }}</h4>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-success p-3 shadow text-center">
+                    <h6>Monthly Total</h6>
+                    <h4>₹{{ "%.2f"|format(monthly_total) }}</h4>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card bg-danger p-3 shadow text-center">
+                    <h6>Yearly Total</h6>
+                    <h4>₹{{ "%.2f"|format(yearly_total) }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Download Section -->
+        <div class="card p-3 shadow mb-4 text-center bg-white">
+            <div>
+                <a href="/download_pdf" class="btn btn-danger btn-lg">📥 Download PDF Report</a>
+            </div>
+        </div>
+
+        <!-- Interactive Graph Section -->
+        <div class="card p-4 shadow">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                <h4 class="text-primary" id="graphTitle">📈 Collection Trend (Daily)</h4>
+                <div>
+                    <button class="btn btn-outline-primary btn-sm active" onclick="showGraph('daily', this)">Day</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="showGraph('weekly', this)">Weekly</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="showGraph('monthly', this)">Monthly</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="showGraph('yearly', this)">Yearly</button>
+                </div>
+            </div>
+
+            <!-- Custom Y-Axis Range Controls -->
+            <div class="row mb-3 g-2 align-items-center bg-light p-2 rounded">
+                <div class="col-auto"><label class="fw-bold small">Y-Axis Max Range:</label></div>
+                <div class="col-auto">
+                    <input type="number" id="yAxisMax" class="form-control form-control-sm" placeholder="e.g. 10000" style="width: 140px;">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-dark" onclick="updateYAxis()">Set Range</button>
+                </div>
+            </div>
+
+            <canvas id="collectionChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Data from Flask Backend
+        const dailyLabels = {{ daily_dates | tojson }};
+        const dailyData = {{ daily_totals | tojson }};
+
+        const weeklyLabels = {{ weekly_labels | tojson }};
+        const weeklyData = {{ weekly_data | tojson }};
+
+        const monthlyLabels = {{ monthly_labels | tojson }};
+        const monthlyData = {{ monthly_data | tojson }};
+
+        const yearlyLabels = {{ yearly_labels | tojson }};
+        const yearlyData = {{ yearly_data | tojson }};
+
+        const ctx = document.getElementById('collectionChart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Collection Amount (₹)',
+                    data: dailyData,
+                    borderColor: 'rgba(13, 110, 253, 1)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        function showGraph(type, btn) {
+            document.querySelectorAll('.btn-outline-primary').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            let title = document.getElementById('graphTitle');
+            if(type === 'daily') {
+                title.innerText = "📈 Collection Trend (Daily)";
+                myChart.data.labels = dailyLabels;
+                myChart.data.datasets[0].data = dailyData;
+            } else if(type === 'weekly') {
+                title.innerText = "📈 Collection Trend (Weekly)";
+                myChart.data.labels = weeklyLabels;
+                myChart.data.datasets[0].data = weeklyData;
+            } else if(type === 'monthly') {
+                title.innerText = "📈 Collection Trend (Monthly)";
+                myChart.data.labels = monthlyLabels;
+                myChart.data.datasets[0].data = monthlyData;
+            } else if(type === 'yearly') {
+                title.innerText = "📈 Collection Trend (Yearly)";
+                myChart.data.labels = yearlyLabels;
+                myChart.data.datasets[0].data = yearlyData;
+            }
+            
+            // Reset Y-axis max when switching views so it auto-scales nicely
+            delete myChart.options.scales.y.max;
+            document.getElementById('yAxisMax').value = '';
+            myChart.update();
+        }
+
+        function updateYAxis() {
+            let maxVal = document.getElementById('yAxisMax').value;
+            if(maxVal) {
+                myChart.options.scales.y.max = parseFloat(maxVal);
+                myChart.update();
+            }
+        }
+    </script>
+</body>
+</html>

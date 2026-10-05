@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container mt-5">
+        <div class="card p-4 shadow">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>{{ title }}</h2>
+                <a href="/dashboard" class="btn btn-success">Home Page</a>
+            </div>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        {% if type == 'monthly' %}
+                            <th>Month</th>
+                        {% elif type == 'yearly' %}
+                            <th>Year</th>
+                        {% elif type == 'weekly' %}
+                            <th>Week</th>
+                        {% else %}
+                            <th>Date</th>
+                            <th>Day</th>
+                        {% endif %}
+                        <th>Total Collection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if type == 'monthly' %}
+                        {% for month, total in monthly_data.items() %}
+                        <tr>
+                            <td><strong>{{ month }}</strong></td>
+                            <td>₹{{ total }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% elif type == 'yearly' %}
+                        {% for year, total in yearly_data.items() %}
+                        <tr>
+                            <td><strong>{{ year }}</strong></td>
+                            <td>₹{{ total }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% elif type == 'weekly' %}
+                        {% for week, total in weekly_data.items() %}
+                        <tr>
+                            <td><strong>{{ week }}</strong></td>
+                            <td>₹{{ total }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for row in records %}
+                        <tr>
+                            <td>{{ row['date'] }}</td>
+                            <td>{{ row['day_name'] }}</td>
+                            <td>₹{{ row['total_amount'] }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

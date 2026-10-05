@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Shop Ledger Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar { height: 100vh; position: fixed; top: 0; left: -280px; width: 280px; background: #343a40; transition: 0.3s; z-index: 1000; padding-top: 20px; overflow-y: auto; }
+        .sidebar.active { left: 0; }
+        .sidebar a { color: white; text-decoration: none; }
+        .sidebar a:hover { background: #495057; }
+        .toggle-btn { font-size: 24px; cursor: pointer; }
+    </style>
+</head>
+<body class="bg-light">
+
+    <!-- Navbar with 3-Line Menu & Dynamic Shop Name -->
+    <nav class="navbar navbar-dark bg-dark px-3">
+        <div class="d-flex align-items-center">
+            <span class="text-white toggle-btn me-3" onclick="toggleSidebar()"><i class="fas fa-bars"></i></span>
+            <span class="navbar-brand mb-0 h1 fs-3 text-warning">{{ shop_name }}</span>
+        </div>
+        <div>
+            <a href="/reports" class="btn btn-outline-light btn-sm me-2">📊 Reports</a>
+            <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+        </div>
+    </nav>
+
+    <!-- 3-Line Sidebar (History & Settings Details) -->
+    <div id="mySidebar" class="sidebar">
+        <div class="d-flex justify-content-between align-items-center px-3 mb-3">
+            <h5 class="text-white m-0">Menu & History</h5>
+            <span class="text-white fs-3" style="cursor: pointer;" onclick="toggleSidebar()">&times;</span>
+        </div>
+        
+        <!-- Settings Details Section inside Sidebar -->
+        <div class="px-3 mb-3 text-light bg-secondary p-2 rounded mx-2">
+            <h6 class="text-warning border-bottom pb-1">Shop Settings</h6>
+            <small><strong>Shop:</strong> {{ shop_name }}</small><br>
+            <small><strong>Phone:</strong> {{ number }}</small><br>
+            <small><strong>Email:</strong> {{ email }}</small>
+            <a href="/settings" class="btn btn-sm btn-light w-100 mt-2 text-dark fw-bold">⚙️ Edit Settings</a>
+        </div>
+
+        <hr class="text-light">
+        <h6 class="text-white px-3 mb-2">All Days History</h6>
+        {% for row in all_records %}
+            <div class="px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                <a href="#" class="text-decoration-none text-light flex-grow-1">
+                    <strong>{{ row['date'] }} ({{ row['day_name'] }})</strong><br>
+                    <small>Total: ₹{{ row['total_amount'] }}</small>
+                </a>
+                <a href="/pin_transaction/{{ row['id'] }}" class="btn btn-sm {% if row['pinned'] == 1 %}btn-warning text-dark{% else %}btn-outline-secondary text-white{% endif %}">
+                    {% if row['pinned'] == 1 %}📌 Unpin{% else %}📌 Pin{% endif %}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="container my-4">
+        <div class="row">
+            <!-- Form to Add Amounts -->
+            <div class="col-md-5">
+                <div class="card p-3 shadow-sm">
+                    <h5 class="text-primary mb-3">Add Collection</h5>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label>Date (Automatic)</label>
+                            <input type="date" name="date" id="dateInput" value="{{ today_date }}" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Morning Amount (₹)</label>
+                            <input type="number" step="any" name="morning" id="morningInput" class="form-control" placeholder="0.00">
+                        </div>
+                        <div class="mb-3">
+                            <label>Afternoon Amount (₹)</label>
+                            <input type="number" step="any" name="afternoon" id="afternoonInput" class="form-control" placeholder="0.00">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Save Collection</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Totals Display Cards -->
+            <div class="col-md-7">
+                <div class="row text-white">
+                    <div class="col-4">
+                        <a href="/weekly_details" class="text-decoration-none">
+                            <div class="card bg-primary p-3 text-center shadow-sm text-white">
+                                <h6>Weekly Total</h6>
+                                <h4>₹{{ weekly_total }}</h4>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="/monthly_details" class="text-decoration-none">
+                            <div class="card bg-success p-3 text-center shadow-sm text-white">
+                                <h6>Monthly Total</h6>
+                                <h4>₹{{ monthly_total }}</h4>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-4">
+                        <a href="/yearly_details" class="text-decoration-none">
+                            <div class="card bg-danger p-3 text-center shadow-sm text-white">
+                                <h6>Yearly Total</h6>
+                                <h4>₹{{ yearly_total }}</h4>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recent History Table -->
+                <div class="card mt-4 p-3 shadow-sm">
+                    <h5>Recent Transactions</h5>
+                    <table class="table table-striped mt-2">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Morning</th>
+                                <th>Afternoon</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in all_records[:5] %}
+                            <tr>
+                                <td>{{ row['date'] }}</td>
+                                <td>{{ row['day_name'] }}</td>
+                                <td>₹{{ row['morning_amount'] }}</td>
+                                <td>₹{{ row['afternoon_amount'] }}</td>
+                                <td><strong>₹{{ row['total_amount'] }}</strong></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Toggle & Auto-fill Script -->
+    <script>
+        function toggleSidebar() {
+            document.getElementById("mySidebar").classList.toggle("active");
+        }
+
+        // Transactions data mapping for auto-filling
+        const transactionsData = {
+            {% for row in all_records %}
+                "{{ row['date'] }}": { morning: "{{ row['morning_amount'] }}", afternoon: "{{ row['afternoon_amount'] }}" },
+            {% endfor %}
+        };
+
+        const dateInput = document.getElementById('dateInput');
+        const morningInput = document.getElementById('morningInput');
+        const afternoonInput = document.getElementById('afternoonInput');
+
+        function updateAmounts() {
+            const selectedDate = dateInput.value;
+            if (transactionsData[selectedDate]) {
+                morningInput.value = transactionsData[selectedDate].morning;
+                afternoonInput.value = transactionsData[selectedDate].afternoon;
+            } else {
+                morningInput.value = "";
+                afternoonInput.value = "";
+            }
+        }
+
+        dateInput.addEventListener('change', updateAmounts);
+        window.onload = updateAmounts;
+    </script>
+</body>
+</html>
